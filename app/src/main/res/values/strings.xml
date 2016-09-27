@@ -2,4 +2,5 @@
     <string name="app_name">VKImage</string>
     <string name="id_user_hint">Id User VK</string>
     <string name="load_image">Load Image</string>
+    <integer name="com_vk_sdk_AppId">5642844</integer>
 </resources>
