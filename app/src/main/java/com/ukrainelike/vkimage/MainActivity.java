@@ -9,6 +9,8 @@ import android.widget.ProgressBar;
 
 import com.daimajia.slider.library.Animations.DescriptionAnimation;
 import com.daimajia.slider.library.SliderLayout;
+import com.daimajia.slider.library.SliderTypes.BaseSliderView;
+import com.daimajia.slider.library.SliderTypes.TextSliderView;
 import com.daimajia.slider.library.Tricks.ViewPagerEx;
 import com.google.gson.Gson;
 import com.vk.sdk.api.VKApiConst;
@@ -20,7 +22,7 @@ import com.vk.sdk.api.VKResponse;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, ViewPagerEx.OnPageChangeListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, ViewPagerEx.OnPageChangeListener, BaseSliderView.OnSliderClickListener {
 
     private SliderLayout imageSlider;
     private EditText id_user;
@@ -49,28 +51,59 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void load_Image() {
+        progressBar.setVisibility(View.VISIBLE);
+        load_image.setEnabled(false);
         VKRequest request = new VKRequest("photos.getAll", VKParameters.from(VKApiConst.OWNER_ID, id_user.getText(), VKApiConst.EXTENDED,"0",VKApiConst.PHOTO_SIZES,"1"));
         request.executeWithListener(new VKRequest.VKRequestListener() {
             @Override
             public void onComplete(VKResponse response) {
                 Gson gson=new Gson();
+                url_maps.clear();
                 ResponseImageVK responseImageVK=gson.fromJson(response.responseString,ResponseImageVK.class);
                 for (Item item:responseImageVK.getResponse().getItems()) {
                     url_maps.add(item.getSizes().get(item.getSizes().size()-1).getSrc());
                 }
+                sliderFormat(url_maps);
             }
 
             @Override
             public void onError(VKError error) {
-                id_user.setText(error.errorMessage);
+                id_user.setText(error.apiError.toString());
+                progressBar.setVisibility(View.INVISIBLE);
+                load_image.setEnabled(true);
+                imageSlider.removeAllSliders();
             }
         });
+    }
+
+    private void sliderFormat(List<String> list) {
+        imageSlider.removeAllSliders();
+
+        for (String name:list) {
+            TextSliderView textSliderView = new TextSliderView(this);
+            textSliderView
+                    .description(name)
+                    .image(name)
+                    .setScaleType(BaseSliderView.ScaleType.Fit)
+                    .setOnSliderClickListener(this);
+            textSliderView.bundle(new Bundle());
+            textSliderView.getBundle()
+                    .putString("extra",name);
+
+            imageSlider.addSlider(textSliderView);
+        }
+        progressBar.setVisibility(View.INVISIBLE);
+        load_image.setEnabled(true);
     }
 
 
     @Override
     public void onClick(View view) {
-
+        switch (view.getId()) {
+            case R.id.Load_Image:
+                load_Image();
+                break;
+        }
     }
 
     @Override
@@ -86,5 +119,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onPageScrollStateChanged(int state) {
 
+    }
+
+    @Override
+    public void onSliderClick(BaseSliderView slider) {
+        imageSlider.moveNextPosition();
     }
 }
