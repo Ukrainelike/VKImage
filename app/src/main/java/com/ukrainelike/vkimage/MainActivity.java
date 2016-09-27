@@ -10,6 +10,12 @@ import android.widget.ProgressBar;
 import com.daimajia.slider.library.Animations.DescriptionAnimation;
 import com.daimajia.slider.library.SliderLayout;
 import com.daimajia.slider.library.Tricks.ViewPagerEx;
+import com.google.gson.Gson;
+import com.vk.sdk.api.VKApiConst;
+import com.vk.sdk.api.VKError;
+import com.vk.sdk.api.VKParameters;
+import com.vk.sdk.api.VKRequest;
+import com.vk.sdk.api.VKResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +26,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private EditText id_user;
     private Button load_image;
     private ProgressBar progressBar;
+    private List<String> url_maps;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,7 +45,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         load_image=(Button) findViewById(R.id.Load_Image);
         load_image.setOnClickListener(this);
         progressBar=(ProgressBar) findViewById(R.id.progressBarLoadStatus);
+        url_maps=new ArrayList<>();
     }
+
+    public void load_Image() {
+        VKRequest request = new VKRequest("photos.getAll", VKParameters.from(VKApiConst.OWNER_ID, id_user.getText(), VKApiConst.EXTENDED,"0",VKApiConst.PHOTO_SIZES,"1"));
+        request.executeWithListener(new VKRequest.VKRequestListener() {
+            @Override
+            public void onComplete(VKResponse response) {
+                Gson gson=new Gson();
+                ResponseImageVK responseImageVK=gson.fromJson(response.responseString,ResponseImageVK.class);
+                for (Item item:responseImageVK.getResponse().getItems()) {
+                    url_maps.add(item.getSizes().get(item.getSizes().size()-1).getSrc());
+                }
+            }
+
+            @Override
+            public void onError(VKError error) {
+                id_user.setText(error.errorMessage);
+            }
+        });
+    }
+
 
     @Override
     public void onClick(View view) {
